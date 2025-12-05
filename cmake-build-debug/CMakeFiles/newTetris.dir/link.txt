@@ -1,0 +1,1 @@
+/usr/bin/gcc -g -Wl,--dependency-file=CMakeFiles/newTetris.dir/link.d CMakeFiles/newTetris.dir/main.c.o -o newTetris
