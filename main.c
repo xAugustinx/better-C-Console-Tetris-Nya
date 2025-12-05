@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-
 #define true 1
 #define false 0
-
+int czyPrzegrana = 0;
+char inputNyga = '0';
+int doZbicia[4];
 char planszaGry[20][10];
 int kS[4][2];
 char strona = 0;
@@ -77,7 +78,6 @@ void rotation() {
         }
         mangosLicznik--;
     }
-
     //zwrócenie danych
     int licznikUwusny = 0;
 
@@ -86,14 +86,13 @@ void rotation() {
         for (int x = 0; x < 4; x++)
         {
             if (m[y][x]) {
-                
+                kS[licznikUwusny][0] = y + punktMinimum[0];
+                kS[licznikUwusny][1] = x + punktMinimum[1];
                 licznikUwusny++;
             }
         }
     }
-
 }
-
 void zerowanie()
 {
     char znakFunkcji;
@@ -115,23 +114,176 @@ void zerowanie()
 }
 void wypisywanieZawartosci()
 {
+    char planszaRobocza[20][10];
+
+    for (int y = 0; y < 20; y++) {
+        for (int x = 0; x < 10; x++) {
+            planszaRobocza[y][x] = planszaGry[y][x];
+        }
+    }
+
+    for (int i = 0; i < 4; i++) {
+        int y = kS[i][0];
+        int x = kS[i][1];
+        planszaRobocza[ y ][ x ] = 'M';
+    }
+
+
     for (int y = 0; y < 20; y++) {
         for (int x = 0; x < 10; x++)
         {
-            printf("%c", planszaGry[y][x]);
+            printf("%c", planszaRobocza[y][x]);
         }
         printf("\n");
     }
+
+    printf("\n\n\n");
 }
+int lewoPrawo()
+{
+    int bool = 1;
+
+    int prawoLewoPlusMinus = 0;
+
+    if (inputNyga == 'a') {
+        prawoLewoPlusMinus = -1;
+    }
+    else if (inputNyga == 'd') {
+        prawoLewoPlusMinus = 1;
+    }
+
+    for (int z = 0; z < 4; z++) {
+        if ( kS[z][1] <= 0 || kS[z][1] >= 9 ) {return 0;}
+    }
 
 
+    for (int i = 0; i < 4; i++)
+    {
+        int y = kS[i][0];
+        int x = kS[i][1];
+
+        if (planszaGry[y] [ x + prawoLewoPlusMinus ] != '#'  ) {
+            bool = 0;
+        }
+    }
+
+    if (bool)
+    {
+        for (int i = 0; i < 4; i++) {
+            kS[i][1] += prawoLewoPlusMinus;
+        }
+    }
+
+
+    return 0;
+}
+void klocekSpada()
+{
+    int bool = 1;
+
+    for (int i = 0; i < 4; i++)
+    {
+        if (planszaGry[kS[i][0] + 1] [ kS[i][1]] != '#'  ) {
+            bool = 0;
+        }
+    }
+
+    if (bool) {
+        for (int i = 0; i < 4; i++) {
+            kS[i][0]++;
+        }
+    }
+    else
+    {
+        //ustawienie tego na stałe
+        for (int i = 0; i < 4; i++)
+        {
+            if (kS[i][0] < 1) {czyPrzegrana=1; return;}
+            planszaGry[kS[i][0]] [ kS[i][1]] = 'F';
+        }
+        losowyKlocek();
+    }
+}
+int czyZbijanie()
+{
+    int bool;
+    for (int y = 0; y < 4; y++) {doZbicia[y] = -1;}
+
+    int licznikNygaMeow = 0;
+
+    for (int y = 0; y < 20; y++)
+    {
+        bool = 1;
+        for (int x = 0; x < 10; x++)
+        {
+            if (planszaGry[y][x] != 'F') { bool= 0; }
+        }
+        if (bool) { doZbicia[licznikNygaMeow] = y;
+            licznikNygaMeow++; }
+    }
+
+    if (licznikNygaMeow > 0) {return 1;}
+    else {return 0;}
+}
+void zbijanie(int czyWOguleZaczac) {
+    if (!czyWOguleZaczac) {return;}
+
+    for (int i = 0; i < 4; i++)
+    {
+        if (doZbicia[i] < 0) {return;}
+
+        for (int y = doZbicia[i]; y > 0; y--)
+        {
+            for (int x = 0; x < 10; x++ ) {
+                planszaGry[y][x] = planszaGry[y-1][x];
+            }
+        }
+        for (int x = 0; x < 10; x++) {
+            planszaGry[0][x] = '#';
+        }
+    }
+}
+void poprawkiPoRotacji()
+{
+    //part 1
+    int bool = 1;
+    while (true) {
+        bool = 1;
+        for (int i = 0; i < 4; i++) {
+            if (planszaGry[ kS[i][0] ][ kS[i][1] ] != '#' ) { bool = 0; }
+        }
+        if (!bool)
+        {
+            for (int y = 0; y < 4; y++) {kS[y][0]--;}
+        }
+        else { break; }
+    }
+}
 int main() {
     srand(time(NULL));
     zerowanie();
-
     losowyKlocek();
+    while (true)
+    {
+        system("clear");
+        zbijanie(czyZbijanie());
+        wypisywanieZawartosci();
+        scanf(" %c",&inputNyga);
 
-    rotation();
+        if (inputNyga == 'r') {
+            rotation();
+            poprawkiPoRotacji();
+        }
+        lewoPrawo();
+        klocekSpada();
+        inputNyga = 0;
+
+        if (czyPrzegrana) {
+            break;
+        }
+        system("clear");
+    }
+    printf("\n");
 
 
 }
