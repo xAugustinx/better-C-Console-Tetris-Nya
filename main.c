@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
+#include <pthread.h>
 #define true 1
 #define false 0
 int czyPrzegrana = 0;
@@ -10,6 +12,16 @@ char planszaGry[20][10];
 int kS[4][2];
 char strona = 0;
 
+int planszaGryKolory[20][10];
+int kolorSpadajocego;
+
+const char *kolory[] = {"\x1b[32m", "\x1b[33m", "\x1b[34m", "\x1b[35m", "\x1b[36m", "\x1b[31m",  "\x1b[0m" };
+
+void* inputo_trzymacz(void* arg) {
+    while (1) {
+        scanf(" %c", &inputNyga);
+    }
+}
 void losowyKlocek() {
     kS[0][0] = 0;
     kS[0][1] = 4;
@@ -41,6 +53,8 @@ void losowyKlocek() {
     int z = 0;
     for (int i = 0; i < 4; i++) { if (kS[i][0] < z ) {z = kS[i][0];} }
     for (int i = 0; i < 4; i++) {kS[i][0] -= z;}
+
+    kolorSpadajocego = rand() % 5;
 }
 void rotation() {
     char i[4][4];
@@ -80,7 +94,6 @@ void rotation() {
     }
     //zwrócenie danych
     int licznikUwusny = 0;
-
     for (int y = 0; y < 4; y++)
     {
         for (int x = 0; x < 4; x++)
@@ -96,19 +109,18 @@ void rotation() {
 void zerowanie()
 {
     char znakFunkcji;
-
     strona = 0;
-
     for (int y = 0; y < 20; y++)
     {
         for (int x = 0; x < 10; x++)
         {
             znakFunkcji = '#';
+            planszaGry[y][x] = znakFunkcji;
+            planszaGryKolory[y][x] = 6;
             if (y == 19) {
                 znakFunkcji = '.';
+                planszaGryKolory[y][x] = 1;
             }
-            planszaGry[y][x] = znakFunkcji;
-
         }
     }
 }
@@ -121,60 +133,46 @@ void wypisywanieZawartosci()
             planszaRobocza[y][x] = planszaGry[y][x];
         }
     }
-
     for (int i = 0; i < 4; i++) {
         int y = kS[i][0];
         int x = kS[i][1];
         planszaRobocza[ y ][ x ] = 'M';
     }
-
-
     for (int y = 0; y < 20; y++) {
         for (int x = 0; x < 10; x++)
         {
-            printf("%c", planszaRobocza[y][x]);
+            if (planszaRobocza[y][x] != 'M') { printf("%s%c%s", kolory[  planszaGryKolory[y][x]   ], planszaRobocza[y][x], kolory[6]); }
+            else { printf("%s%c%s", kolory[5], planszaRobocza[y][x], kolory[6]); }
         }
         printf("\n");
     }
-
-    printf("\n\n\n");
 }
 int lewoPrawo()
 {
     int bool = 1;
-
     int prawoLewoPlusMinus = 0;
 
-    if (inputNyga == 'a') {
-        prawoLewoPlusMinus = -1;
-    }
-    else if (inputNyga == 'd') {
-        prawoLewoPlusMinus = 1;
-    }
+    if (inputNyga == 'a') { prawoLewoPlusMinus = -1; }
+    else if (inputNyga == 'd') { prawoLewoPlusMinus = 1; }
 
     for (int z = 0; z < 4; z++) {
         if ( kS[z][1] <= 0 || kS[z][1] >= 9 ) {return 0;}
     }
-
-
     for (int i = 0; i < 4; i++)
     {
         int y = kS[i][0];
         int x = kS[i][1];
 
-        if (planszaGry[y] [ x + prawoLewoPlusMinus ] != '#'  ) {
+        if (planszaGry[y] [ x + prawoLewoPlusMinus ] != '#') {
             bool = 0;
         }
     }
-
     if (bool)
     {
         for (int i = 0; i < 4; i++) {
             kS[i][1] += prawoLewoPlusMinus;
         }
     }
-
-
     return 0;
 }
 void klocekSpada()
@@ -194,13 +192,13 @@ void klocekSpada()
         }
     }
     else
-    {
-        //ustawienie tego na stałe
+    {   //ustawienie tego na stałe
         for (int i = 0; i < 4; i++)
         {
             if (kS[i][0] < 1) {czyPrzegrana=1; return;}
             planszaGry[kS[i][0]] [ kS[i][1]] = 'F';
         }
+        for (int i = 0; i < 4; i++) {planszaGryKolory[ kS[i][0] ][ kS[i][1] ] = kolorSpadajocego;}
         losowyKlocek();
     }
 }
@@ -245,8 +243,28 @@ void zbijanie(int czyWOguleZaczac) {
 }
 void poprawkiPoRotacji()
 {
-    //part 1
     int bool = 1;
+    int najmniejszy = 0;
+    int najwiekszy = 9;
+    for (int i = 0; i < 4; i++) {
+        if (kS[i][1] > najwiekszy)
+        {najwiekszy = kS[i][1];}
+        else if (kS[i][1] < najmniejszy)
+        {najmniejszy = kS[i][1];}
+    }
+    if (najmniejszy < 0 )
+    { for (int y = 0; y < 4; y++) {
+            kS[y][1] = kS[y][1] + (najmniejszy * -1);
+        }
+    }
+    else if (najwiekszy > 9) {
+        printf("mango mango mango 67, sigma boy już leci na ciebie");
+        for (int y = 0; y < 4; y++) {
+            kS[y][1] = kS[y][1] - (najwiekszy - 9) ;
+        }
+    }
+    //part 1
+    bool = 1;
     while (true) {
         bool = 1;
         for (int i = 0; i < 4; i++) {
@@ -261,6 +279,9 @@ void poprawkiPoRotacji()
 }
 int main() {
     srand(time(NULL));
+
+    pthread_t input_thread;
+    pthread_create(&input_thread, NULL, inputo_trzymacz, NULL);
     zerowanie();
     losowyKlocek();
     while (true)
@@ -268,22 +289,16 @@ int main() {
         system("clear");
         zbijanie(czyZbijanie());
         wypisywanieZawartosci();
-        scanf(" %c",&inputNyga);
-
+        usleep(900000);
         if (inputNyga == 'r') {
             rotation();
             poprawkiPoRotacji();
         }
         lewoPrawo();
         klocekSpada();
-        inputNyga = 0;
-
-        if (czyPrzegrana) {
-            break;
-        }
+        inputNyga = '0';
         system("clear");
+        if (czyPrzegrana) { break; }
     }
-    printf("\n");
-
-
+    pthread_join(input_thread, NULL);
 }
