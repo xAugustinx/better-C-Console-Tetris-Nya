@@ -115,12 +115,12 @@ void zerowanie()
         for (int x = 0; x < 10; x++)
         {
             znakFunkcji = '#';
-            planszaGry[y][x] = znakFunkcji;
             planszaGryKolory[y][x] = 6;
             if (y == 19) {
                 znakFunkcji = '.';
                 planszaGryKolory[y][x] = 1;
             }
+            planszaGry[y][x] = znakFunkcji;
         }
     }
 }
