@@ -61,15 +61,11 @@ void rotation() {
     char m[4][4];
 
     //szukamy punktu minimum
-    int punktMinimum[2];
-
-    punktMinimum[0] = kS[0][0];
-    punktMinimum[1] = kS[0][1];
+    int punktMinimum[2] = {kS[0][0], punktMinimum[1] = kS[0][1] };
 
     for (int z = 0; z < 4; z++) {
         if (punktMinimum[0] > kS[z][0] ) { punktMinimum[0] = kS[z][0]; }
         if (punktMinimum[1] > kS[z][1])  { punktMinimum[1] = kS[z][1]; }}
-
     //czyszczenie
     for (int y = 0; y < 4; y++) {
         for (int x = 0; x < 4; x++)
@@ -84,13 +80,11 @@ void rotation() {
             i[z][y] =  m[y][z];
         }
     }
-    int mangosLicznik = 3;
     for (int z = 0; z < 4; z++) {
         for (int y = 0; y < 4; y++)
         {
-            m[z][y] = i[mangosLicznik][y];
+            m[z][y] = i[3 - z][y];
         }
-        mangosLicznik--;
     }
     //zwrócenie danych
     int licznikUwusny = 0;
@@ -234,10 +228,12 @@ void zbijanie(int czyWOguleZaczac) {
         {
             for (int x = 0; x < 10; x++ ) {
                 planszaGry[y][x] = planszaGry[y-1][x];
+                planszaGryKolory[y][x] = planszaGryKolory[y-1][x];
             }
         }
         for (int x = 0; x < 10; x++) {
             planszaGry[0][x] = '#';
+            planszaGryKolory[0][x] = 6;
         }
     }
 }
@@ -258,7 +254,6 @@ void poprawkiPoRotacji()
         }
     }
     else if (najwiekszy > 9) {
-        printf("mango mango mango 67, sigma boy już leci na ciebie");
         for (int y = 0; y < 4; y++) {
             kS[y][1] = kS[y][1] - (najwiekszy - 9) ;
         }
@@ -279,7 +274,6 @@ void poprawkiPoRotacji()
 }
 int main() {
     srand(time(NULL));
-
     pthread_t input_thread;
     pthread_create(&input_thread, NULL, inputo_trzymacz, NULL);
     zerowanie();
@@ -296,9 +290,9 @@ int main() {
         }
         lewoPrawo();
         klocekSpada();
-        inputNyga = '0';
-        system("clear");
-        if (czyPrzegrana) { break; }
+        inputNyga = 0;
+        if (czyPrzegrana) {  break; }
     }
+    system("clear");
     pthread_join(input_thread, NULL);
 }
